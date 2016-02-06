@@ -1,5 +1,5 @@
 # gnome-screensaver-lock
-GNOME Screensaver Fails to Lock with VirtualBox Running - This is my solution
+GNOME Screensaver fails to lock with VirtualBox running - This is my solution
 
 More details on the problem are here: http://mikeb.org/2016/02/06/gnome-screensaver/
 
