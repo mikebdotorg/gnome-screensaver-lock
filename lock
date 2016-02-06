@@ -1,0 +1,33 @@
+#!/usr/bin/bash
+
+# have to grab the newest gnome-session so we don't grab gdm's d-bus session information by mistake
+gsPid="`pgrep -n gnome-session | egrep '^[0-9]+$'`"
+if [ -z "$gsPid" ]
+then
+	echo "gnome-session does not appear to be running" 1>&2
+	exit 1
+fi
+
+export DISPLAY=:0
+export DBUS_SESSION_BUS_ADDRESS="`grep -z ^DBUS_SESSION_BUS_ADDRESS= /proc/${gsPid}/environ | cut -f2- -d=`"
+
+desktopUser="`id -nu \"\`egrep '^[0-9]+$' /proc/${gsPid}/loginuid\`\"`"
+
+running="`/usr/bin/sudo -E -u $desktopUser -- /usr/bin/gnome-screensaver-command --query 2>&1 | awk '{print $4}'`"
+
+# skip everything if the screensaver is already running
+if [ "$running" == "inactive" ]
+then
+	newfocus="`/usr/bin/sudo -E -u $desktopUser -- /usr/bin/wmctrl -l 2>&1 | /usr/bin/grep -v VirtualBox | /usr/bin/head -n1 | /usr/bin/cut -f5 -d\ `"
+	if [ -n "$newfocus" ]
+	then
+		# change window focus to a non-virtualbox window
+		/usr/bin/sudo -E -u $desktopUser -- /usr/bin/wmctrl -a "$newfocus" 2>&1
+	else
+		# we have no windows open that aren't virtualbox, expose the desktop instead
+		/usr/bin/sudo -E -u $desktopUser -- /usr/bin/wmctrl -k on 2>&1
+	fi
+		
+	# lock the screen
+	/usr/bin/sudo -E -u $desktopUser -- /usr/bin/gnome-screensaver-command --lock 2>&1
+fi
